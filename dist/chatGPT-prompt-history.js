@@ -1,4 +1,3 @@
-"use strict";
 // ==UserScript==
 // @name         ChatGPT Prompt History with Arrow Keys
 // @namespace    http://tampermonkey.net/

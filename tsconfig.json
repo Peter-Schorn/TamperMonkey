@@ -16,7 +16,8 @@
         "sourceMap": false,
         "noUncheckedIndexedAccess": true,
         "verbatimModuleSyntax": false,
-        "importsNotUsedAsValues": "remove"
+        "importsNotUsedAsValues": "remove",
+        "alwaysStrict": false
     },
     "include": [
         "src/**/*"

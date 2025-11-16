@@ -1,4 +1,3 @@
-"use strict";
 // ==UserScript==
 // @name         Barcode Drop Type Text
 // @namespace    http://tampermonkey.net/

@@ -1,4 +1,3 @@
-"use strict";
 const origFetch = window.fetch;
 window.fetch = async function (...args) {
     const response = await origFetch(...args);

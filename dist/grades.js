@@ -1,4 +1,3 @@
-"use strict";
 // ==UserScript==
 // @name         grades
 // @namespace    http://tampermonkey.net/
