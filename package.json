@@ -1,0 +1,28 @@
+{
+    "name": "tamper-monkey",
+    "version": "1.0.0",
+    "description": "tamper monkey scripts",
+    "license": "ISC",
+    "author": "",
+    "type": "module",
+    "scripts": {
+        "build": "tsc && ./post-build.sh",
+        "watch": "npm run onchange & tsc --watch",
+        "dev": "npm run onchange & tsc --watch --incremental --skipLibCheck --noCheck",
+        "lint": "eslint .",
+        "clean": "rm -rf dist",
+        "clean-build": "npm run clean && npm run build",
+        "onchange": "onchange 'dist/**/*.js' -- ./post-build.sh"
+    },
+    "devDependencies": {
+        "@eslint/js": "^9.37.0",
+        "@stylistic/eslint-plugin": "^5.4.0",
+        "@types/reconnectingwebsocket": "^1.0.10",
+        "@types/tampermonkey": "^5.0.5",
+        "eslint": "^9.37.0",
+        "globals": "^16.4.0",
+        "onchange": "^7.1.0",
+        "typescript": "^5.9.3",
+        "typescript-eslint": "^8.46.1"
+    }
+}
