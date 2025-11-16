@@ -6,7 +6,7 @@
     "author": "",
     "type": "module",
     "scripts": {
-        "build": "tsc",
+        "build": "tsc && ./post-build.sh",
         "watch": "tsc --watch",
         "dev": "tsc --watch --incremental --skipLibCheck --noCheck",
         "lint": "eslint .",
