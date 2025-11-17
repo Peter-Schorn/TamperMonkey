@@ -3,7 +3,7 @@
     "version": "1.0.0",
     "description": "tamper monkey scripts",
     "license": "ISC",
-    "author": "",
+    "author": "Peter Schorn",
     "type": "module",
     "scripts": {
         "build": "tsc && ./post-build.sh",

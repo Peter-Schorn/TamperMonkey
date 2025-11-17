@@ -2,8 +2,9 @@
 // @name         Barcode Drop Type Text
 // @namespace    http://tampermonkey.net/
 // @version      2025-11-14
-// @description  try to take over the world!
-// @author       You
+// @description  automatically types barcodes from BarcodeDrop into the active
+//               input field
+// @author       Peter Schorn
 // @match        *://*/*
 // @exclude      https://www.barcodedrop.com/*
 // @grant        GM_getValue
@@ -25,7 +26,7 @@
             GM_setValue(USERNAME_KEY, USER);
         }
         else {
-            console.warn("No BarcodeDrop username provided; aborting script.");
+            console.warn("no BarcodeDrop username provided; aborting script.");
             return;
         }
     }
@@ -40,7 +41,7 @@
         // window
         return document.hasFocus() && document.visibilityState === "visible";
     }
-    function submit(el) {
+    function submit(element) {
         // simulate Enter key events (for JS listeners)
         const down = new KeyboardEvent("keydown", {
             bubbles: true,
@@ -48,16 +49,17 @@
             key: "Enter",
             code: "Enter",
         });
-        el.dispatchEvent(down);
+        element.dispatchEvent(down);
         const up = new KeyboardEvent("keyup", {
             bubbles: true,
             cancelable: true,
             key: "Enter",
             code: "Enter"
         });
-        el.dispatchEvent(up);
-        if (isFormAssociatedElement(el)) {
-            const form = el.form;
+        element.dispatchEvent(up);
+        console.log("submit with enter key for element:", element);
+        if (isFormAssociatedElement(element)) {
+            const form = element.form;
             if (form) {
                 try {
                     form.requestSubmit();
@@ -67,50 +69,79 @@
                         bubbles: true, cancelable: true
                     }));
                 }
+                console.log("submit on associated form:", form);
             }
         }
     }
-    function setFrameworkAwareInputValue(el, value) {
-        const proto = Object.getPrototypeOf(el);
+    function setFrameworkAwareInputValue(element, value) {
+        const proto = Object.getPrototypeOf(element);
         const desc = Object.getOwnPropertyDescriptor(proto, "value");
         if (desc && typeof desc.set === "function") {
             // use the native setter so React (and others) see it properly
-            desc.set.call(el, value);
+            desc.set.call(element, value);
         }
         else {
             // fallback: direct assignment
-            el.value = value;
+            element.value = value;
         }
         // most frameworks (including Vue, Svelte, Angular, React) listen to
         // this
-        el.dispatchEvent(new Event("input", { bubbles: true }));
+        element.dispatchEvent(new Event("input", { bubbles: true }));
+    }
+    function appendToElement(element, text) {
+        if (element instanceof HTMLInputElement ||
+            element instanceof HTMLTextAreaElement) {
+            console.log("will append to element:", element.outerHTML, element);
+            console.log("previous value:", element.value);
+            const newValue = element.value + text;
+            setFrameworkAwareInputValue(element, newValue);
+            console.log("appended to value:", element.value);
+        }
+        else if (element instanceof HTMLElement &&
+            element.isContentEditable) {
+            console.log("will append to element:", element.outerHTML, element);
+            console.log("previous contentEditable:", element.innerText);
+            element.insertAdjacentText("beforeend", text);
+            console.log("appended to contentEditable:", element.innerText);
+            element.dispatchEvent(new Event("input", { bubbles: true }));
+        }
+        else {
+            console.warn("element is not editable:", element);
+            // recursively check children of the element for editable elements
+            for (const child of element.children) {
+                if (appendToElement(child, text)) {
+                    return true;
+                }
+            }
+            return false;
+        }
+        // just to be safe, wait until the next event loop in case this is
+        // necessary for frameworks to process the input event until submitting
+        setTimeout(() => {
+            submit(element);
+        }, 0);
+        return true;
     }
     /**
      * Appends a string to the active element and simulates pressing Enter.
      * Works whether or not the element is inside a form.
      */
     function appendToActiveElement(text) {
-        const el = document.activeElement;
-        console.log("appendToActiveElement: will try appending to:", el);
-        // append text
-        if (el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement) {
-            const newValue = el.value + text;
-            setFrameworkAwareInputValue(el, newValue);
-            console.log("appended to value:", el.value);
-        }
-        else if (el instanceof HTMLElement && el.isContentEditable) {
-            el.insertAdjacentText("beforeend", text);
-            el.dispatchEvent(new Event("input", { bubbles: true }));
-        }
-        else {
-            console.warn("Active element is not editable:", el);
+        const element = document.activeElement;
+        if (!element) {
+            console.warn("no active element to append text to.");
             return;
         }
-        // just to be safe, wait until the next event loop in case this is
-        // necessary for frameworks to process the input event until submitting
-        setTimeout(() => {
-            submit(el);
-        }, 0);
+        if ([
+            document.body,
+            document.documentElement
+        ].includes(element)) {
+            // do not recurse through the entire document
+            console.warn("active element is body or documentElement; not appending.");
+            return;
+        }
+        console.log("appendToActiveElement: will try appending to:", element);
+        appendToElement(element, text);
     }
     function startWebSocket() {
         // https://github.com/joewalnes/reconnecting-websocket
