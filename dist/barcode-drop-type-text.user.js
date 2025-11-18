@@ -199,10 +199,6 @@
             websocket = null;
         }
     }
-    if (document.visibilityState === "visible") {
-        // start the web socket if the document is visible
-        startWebSocket();
-    }
     document.addEventListener("visibilitychange", () => {
         if (document.visibilityState === "visible") {
             console.log("page became visible; starting websocket");
@@ -213,4 +209,8 @@
             stopWebSocket();
         }
     });
+    if (document.visibilityState === "visible") {
+        // start the web socket if the document is visible
+        startWebSocket();
+    }
 })();
