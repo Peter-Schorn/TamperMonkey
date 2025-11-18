@@ -125,7 +125,7 @@
         // necessary for frameworks to process the input event until submitting
         setTimeout(() => {
             submit(element);
-        }, 2000);
+        }, 0);
         return true;
     }
     /**
