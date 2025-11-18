@@ -51,13 +51,17 @@
             cancelable: true,
             key: "Enter",
             code: "Enter",
+            keyCode: 13,
+            which: 13
         });
         element.dispatchEvent(down);
         const up = new KeyboardEvent("keyup", {
             bubbles: true,
             cancelable: true,
             key: "Enter",
-            code: "Enter"
+            code: "Enter",
+            keyCode: 13,
+            which: 13
         });
         element.dispatchEvent(up);
         console.log("submit with enter key for element:", element);
@@ -117,6 +121,15 @@
             for (const child of element.children) {
                 if (appendToElement(child, text)) {
                     return true;
+                }
+            }
+            // check shadow DOM if present
+            if (element instanceof HTMLElement && element.shadowRoot) {
+                console.log("checking shadow root for editable elements");
+                for (const child of element.shadowRoot.children) {
+                    if (appendToElement(child, text)) {
+                        return true;
+                    }
                 }
             }
             return false;

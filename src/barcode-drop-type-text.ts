@@ -65,6 +65,8 @@
             cancelable: true,
             key: "Enter",
             code: "Enter",
+            keyCode: 13,
+            which: 13
         });
         element.dispatchEvent(down);
 
@@ -72,7 +74,9 @@
             bubbles: true,
             cancelable: true,
             key: "Enter",
-            code: "Enter"
+            code: "Enter",
+            keyCode: 13,
+            which: 13
         });
         element.dispatchEvent(up);
 
@@ -152,6 +156,17 @@
                     return true;
                 }
             }
+
+            // check shadow DOM if present
+            if (element instanceof HTMLElement && element.shadowRoot) {
+                console.log("checking shadow root for editable elements");
+                for (const child of element.shadowRoot.children) {
+                    if (appendToElement(child, text)) {
+                        return true;
+                    }
+                }
+            }
+
             return false;
         }
 

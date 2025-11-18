@@ -21,7 +21,7 @@
     },
     "include": [
         "src/**/*"
-    ],
+, "scratches/scratches.js"    ],
     "exclude": [
         "dist",
     ]
