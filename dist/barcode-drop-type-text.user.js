@@ -17,6 +17,7 @@
     if (window.top !== window.self) {
         return; // prevent running in iframes
     }
+    // MARK: Get Username
     const USERNAME_KEY = "username";
     let USER = GM_getValue(USERNAME_KEY);
     if (!USER) {
@@ -30,7 +31,9 @@
             return;
         }
     }
+    // MARK: Constants
     const WEBSOCKET_URL = "wss://api.barcodedrop.com/watch/" + USER;
+    let websocket = null;
     function isFormAssociatedElement(el) {
         return "form" in el;
     }
@@ -41,7 +44,7 @@
         // window
         return document.hasFocus() && document.visibilityState === "visible";
     }
-    function submit(element) {
+    function typeEnterKey(element) {
         // simulate Enter key events (for JS listeners)
         const down = new KeyboardEvent("keydown", {
             bubbles: true,
@@ -58,6 +61,9 @@
         });
         element.dispatchEvent(up);
         console.log("submit with enter key for element:", element);
+    }
+    function submit(element) {
+        typeEnterKey(element);
         if (isFormAssociatedElement(element)) {
             const form = element.form;
             if (form) {
@@ -119,7 +125,7 @@
         // necessary for frameworks to process the input event until submitting
         setTimeout(() => {
             submit(element);
-        }, 0);
+        }, 2000);
         return true;
     }
     /**
@@ -143,47 +149,68 @@
         console.log("appendToActiveElement: will try appending to:", element);
         appendToElement(element, text);
     }
+    function receiveSocketMessage(message) {
+        if (!pageIsActive()) {
+            console.log("ignoring socket message because page not active");
+            return;
+        }
+        if (typeof message.data !== "string") {
+            console.warn("ignoring non-string socket message");
+            return;
+        }
+        try {
+            const payload = JSON.parse(message.data);
+            if (payload.type === "upsertScans" &&
+                payload.newScans.length > 0) {
+                const barcode = payload.newScans[0].barcode;
+                console.log("BARCODE:", barcode);
+                appendToActiveElement(barcode);
+            }
+        }
+        catch (error) {
+            console.error("error processing socket message:", error);
+        }
+    }
+    // MARK: Web Socket
     function startWebSocket() {
         // https://github.com/joewalnes/reconnecting-websocket
         // https://cdnjs.com/libraries/reconnecting-websocket
-        const socket = new ReconnectingWebSocket(WEBSOCKET_URL);
-        socket.addEventListener("open", (event) => {
+        websocket = new ReconnectingWebSocket(WEBSOCKET_URL);
+        websocket.addEventListener("open", (event) => {
             console.log(`websocket open ${WEBSOCKET_URL}:`, event);
         });
-        socket.addEventListener("connecting", (event) => {
+        websocket.addEventListener("connecting", (event) => {
             console.log(`websocket connecting ${WEBSOCKET_URL}:`, event);
         });
-        socket.addEventListener("message", (event) => {
+        websocket.addEventListener("message", (event) => {
             console.log(`websocket message ${WEBSOCKET_URL}:`, event);
-            if (!pageIsActive()) {
-                console.log("ignoring socket message because page not active");
-                return;
-            }
-            if (typeof event.data !== "string") {
-                console.warn("ignoring non-string socket message");
-                return;
-            }
-            try {
-                const payload = JSON.parse(event.data);
-                if (payload.type === "upsertScans" &&
-                    payload.newScans.length > 0) {
-                    const barcode = payload.newScans[0].barcode;
-                    console.log("BARCODE:", barcode);
-                    appendToActiveElement(barcode);
-                }
-            }
-            catch (error) {
-                console.error("error processing socket message:", error);
-            }
+            receiveSocketMessage(event);
         });
-        socket.addEventListener("error", (error) => {
+        websocket.addEventListener("error", (error) => {
             console.warn(`websocket error ${WEBSOCKET_URL}:`, error);
         });
-        socket.addEventListener("close", (event) => {
+        websocket.addEventListener("close", (event) => {
             console.log(`websocket close ${WEBSOCKET_URL}:`, event);
         });
     }
-    // IGNORE eslint-disable-next-line no-debugger
-    // debugger;
-    startWebSocket();
+    function stopWebSocket() {
+        if (websocket) {
+            websocket.close();
+            websocket = null;
+        }
+    }
+    if (document.visibilityState === "visible") {
+        // start the web socket if the document is visible
+        startWebSocket();
+    }
+    document.addEventListener("visibilitychange", () => {
+        if (document.visibilityState === "visible") {
+            console.log("page became visible; starting websocket");
+            startWebSocket();
+        }
+        else {
+            console.log("page became hidden; stopping websocket");
+            stopWebSocket();
+        }
+    });
 })();

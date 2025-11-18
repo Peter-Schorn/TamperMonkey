@@ -1,3 +1,9 @@
+declare namespace BarcodeDropTypes {
+    interface Window extends globalThis.Window {
+        closeWebSocket(): void;
+    }
+}
+
 type SocketMessageTypes = "upsertScans" | "deleteScans" | "replaceAllScans";
 
 /**

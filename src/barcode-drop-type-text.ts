@@ -20,6 +20,8 @@
         return; // prevent running in iframes
     }
 
+    // MARK: Get Username
+
     const USERNAME_KEY = "username";
 
     let USER = GM_getValue<string>(USERNAME_KEY);
@@ -35,7 +37,11 @@
         }
     }
 
+    // MARK: Constants
+
     const WEBSOCKET_URL = "wss://api.barcodedrop.com/watch/" + USER;
+
+    let websocket: ReconnectingWebSocket | null = null;
 
     function isFormAssociatedElement(
         el: HTMLElement
@@ -51,7 +57,7 @@
         return document.hasFocus() && document.visibilityState === "visible";
     }
 
-    function submit(element: HTMLElement): void {
+    function typeEnterKey(element: Element): void {
 
         // simulate Enter key events (for JS listeners)
         const down = new KeyboardEvent("keydown", {
@@ -71,6 +77,11 @@
         element.dispatchEvent(up);
 
         console.log("submit with enter key for element:", element);
+    }
+
+    function submit(element: HTMLElement): void {
+
+        typeEnterKey(element);
 
         if (isFormAssociatedElement(element)) {
 
@@ -88,7 +99,6 @@
                 console.log("submit on associated form:", form);
             }
         }
-
     }
 
     function setFrameworkAwareInputValue(
@@ -149,7 +159,7 @@
         // necessary for frameworks to process the input event until submitting
         setTimeout(() => {
             submit(element);
-        }, 0);
+        }, 2_000);
 
         return true;
 
@@ -184,67 +194,92 @@
 
     }
 
+    function receiveSocketMessage(
+        message: ReconnectingWebSocket.MessageEvent
+    ): void {
+
+        if (!pageIsActive()) {
+            console.log("ignoring socket message because page not active");
+            return;
+        }
+
+        if (typeof message.data !== "string") {
+            console.warn("ignoring non-string socket message");
+            return;
+        }
+
+        try {
+            const payload = JSON.parse(message.data) as SocketMessage;
+
+            if (
+                payload.type === "upsertScans" &&
+                payload.newScans.length > 0
+            ) {
+                const barcode = payload.newScans[0]!.barcode;
+                console.log("BARCODE:", barcode);
+                appendToActiveElement(barcode);
+            }
+
+        } catch (error) {
+            console.error("error processing socket message:", error);
+        }
+    }
+
+    // MARK: Web Socket
+
     function startWebSocket(): void {
 
         // https://github.com/joewalnes/reconnecting-websocket
         // https://cdnjs.com/libraries/reconnecting-websocket
-        const socket = new ReconnectingWebSocket(WEBSOCKET_URL);
+        websocket = new ReconnectingWebSocket(WEBSOCKET_URL);
 
-        socket.addEventListener("open", (event) => {
+        websocket.addEventListener("open", (event) => {
             console.log(`websocket open ${WEBSOCKET_URL}:`, event);
         });
 
-        socket.addEventListener("connecting", (event) => {
+        websocket.addEventListener("connecting", (event) => {
             console.log(`websocket connecting ${WEBSOCKET_URL}:`, event);
         });
 
-        socket.addEventListener("message", (event) => {
+        websocket.addEventListener("message", (event) => {
 
             console.log(`websocket message ${WEBSOCKET_URL}:`, event);
 
-
-            if (!pageIsActive()) {
-                console.log("ignoring socket message because page not active");
-                return;
-            }
-
-            if (typeof event.data !== "string") {
-                console.warn("ignoring non-string socket message");
-                return;
-            }
-
-            try {
-                const payload = JSON.parse(event.data) as SocketMessage;
-
-                if (
-                    payload.type === "upsertScans" &&
-                    payload.newScans.length > 0
-                ) {
-                    const barcode = payload.newScans[0]!.barcode;
-                    console.log("BARCODE:", barcode);
-                    appendToActiveElement(barcode);
-                }
-
-            } catch (error) {
-                console.error("error processing socket message:", error);
-            }
+            receiveSocketMessage(event);
 
         });
 
-        socket.addEventListener("error", (error) => {
+        websocket.addEventListener("error", (error) => {
             console.warn(`websocket error ${WEBSOCKET_URL}:`, error);
         });
 
-        socket.addEventListener("close", (event) => {
+        websocket.addEventListener("close", (event) => {
             console.log(`websocket close ${WEBSOCKET_URL}:`, event);
         });
 
-
     }
 
-    // IGNORE eslint-disable-next-line no-debugger
-    // debugger;
+    function stopWebSocket(): void {
+        if (websocket) {
+            websocket.close();
+            websocket = null;
+        }
+    }
 
-    startWebSocket();
+    if (document.visibilityState === "visible") {
+        // start the web socket if the document is visible
+        startWebSocket();
+    }
+
+    document.addEventListener("visibilitychange", () => {
+        if (document.visibilityState === "visible") {
+            console.log("page became visible; starting websocket");
+            startWebSocket();
+        } else {
+            console.log("page became hidden; stopping websocket");
+            stopWebSocket();
+        }
+    });
+
 
 })();
