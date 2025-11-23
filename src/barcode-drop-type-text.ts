@@ -44,9 +44,9 @@
     let websocket: ReconnectingWebSocket | null = null;
 
     function isFormAssociatedElement(
-        el: HTMLElement
-    ): el is FormAssociatedElement {
-        return "form" in el;
+        element: HTMLElement
+    ): element is FormAssociatedElement {
+        return "form" in element;
     }
 
     function pageIsActive(): boolean {
@@ -158,7 +158,7 @@
             }
 
             // check shadow DOM if present
-            if (element instanceof HTMLElement && element.shadowRoot) {
+            if (element.shadowRoot) {
                 console.log("checking shadow root for editable elements");
                 for (const child of element.shadowRoot.children) {
                     if (appendToElement(child, text)) {
@@ -295,6 +295,5 @@
         // start the web socket if the document is visible
         startWebSocket();
     }
-
 
 })();

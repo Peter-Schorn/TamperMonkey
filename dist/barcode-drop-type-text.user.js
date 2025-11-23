@@ -34,8 +34,8 @@
     // MARK: Constants
     const WEBSOCKET_URL = "wss://api.barcodedrop.com/watch/" + USER;
     let websocket = null;
-    function isFormAssociatedElement(el) {
-        return "form" in el;
+    function isFormAssociatedElement(element) {
+        return "form" in element;
     }
     function pageIsActive() {
         // document.hasFocus() -> tab is focused (not in background, not hidden
@@ -124,7 +124,7 @@
                 }
             }
             // check shadow DOM if present
-            if (element instanceof HTMLElement && element.shadowRoot) {
+            if (element.shadowRoot) {
                 console.log("checking shadow root for editable elements");
                 for (const child of element.shadowRoot.children) {
                     if (appendToElement(child, text)) {
