@@ -306,14 +306,9 @@
         // }, 2_000);
         websocket.addEventListener("open", (event) => {
             console.log(`websocket open ${WEBSOCKET_URL}:`, event);
-            // add a small delay before clearing the startConnectionAttemptDate
-            // to allow enough time for the web socket connection to actually
-            // receive messages
-            setTimeout(() => {
-                startConnectionAttemptDate = null;
-                // abort the fetch for the latest barcode if it's still ongoing
-                abortController?.abort();
-            }, 1000);
+            startConnectionAttemptDate = null;
+            // abort the fetch for the latest barcode if it's still ongoing
+            abortController?.abort();
         });
         websocket.addEventListener("connecting", (event) => {
             console.log(`websocket connecting ${WEBSOCKET_URL}:`, event);
