@@ -44,12 +44,20 @@ type BarcodeStore = Record<string, number>;
 
     function configureUsername(): void {
         const username = prompt("Enter your BarcodeDrop username");
-        if (username) {
+        if (username === null) {
+            console.log(
+                "username configuration cancelled; keeping existing " +
+                `username: "${USER}"`
+            );
+        }
+        else if (username) {
             console.log(`received username: "${username}"`);
             USER = username;
             GM_setValue(USERNAME_KEY, USER);
         } else {
-            console.log("no username entered");
+            console.log(
+                `entered empty username; clearing stored username "${USER}"`
+            );
             GM_deleteValue(USERNAME_KEY);
         }
     }
@@ -100,6 +108,15 @@ type BarcodeStore = Record<string, number>;
      * while preventing older scans from being inserted.
      */
     let startConnectionAttemptDate: Date | null = null;
+
+    /**
+     * Sleeps for the given duration in milliseconds.
+     *
+     * @param ms The number of milliseconds to sleep for.
+     */
+    function sleep(ms: number): Promise<void> {
+        return new Promise(resolve => setTimeout(resolve, ms));
+    }
 
     /**
      * Tries to use the given barcode. Returns true if the barcode was not used
@@ -371,7 +388,7 @@ type BarcodeStore = Record<string, number>;
                 const barcode = scan.barcode;
                 if (!tryUseBarcodeID(scan.id)) {
                     console.log(
-                        `already used barcode "${barcode}"`
+                        `websocket: already used barcode "${barcode}"`
                     );
                     return;
                 }
@@ -535,7 +552,7 @@ type BarcodeStore = Record<string, number>;
                     );
                     if (!tryUseBarcodeID(latestBarcode.id)) {
                         console.log(
-                            "already seen barcode " +
+                            "fetch: already used barcode " +
                             `"${latestBarcode.barcode}"; not appending again`
                         );
                         return;
@@ -598,7 +615,7 @@ type BarcodeStore = Record<string, number>;
             abortController?.abort();
             stopWebSocket();
 
-            if (USER && pageIsActive()) {
+            if (USER && document.visibilityState === "visible") {
                 startWebSocket();
             }
         }

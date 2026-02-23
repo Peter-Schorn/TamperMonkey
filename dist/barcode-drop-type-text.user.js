@@ -29,13 +29,17 @@
     let USER = GM_getValue(USERNAME_KEY, null);
     function configureUsername() {
         const username = prompt("Enter your BarcodeDrop username");
-        if (username) {
+        if (username === null) {
+            console.log("username configuration cancelled; keeping existing " +
+                `username: "${USER}"`);
+        }
+        else if (username) {
             console.log(`received username: "${username}"`);
             USER = username;
             GM_setValue(USERNAME_KEY, USER);
         }
         else {
-            console.log("no username entered");
+            console.log(`entered empty username; clearing stored username "${USER}"`);
             GM_deleteValue(USERNAME_KEY);
         }
     }
@@ -74,6 +78,14 @@
      * while preventing older scans from being inserted.
      */
     let startConnectionAttemptDate = null;
+    /**
+     * Sleeps for the given duration in milliseconds.
+     *
+     * @param ms The number of milliseconds to sleep for.
+     */
+    function sleep(ms) {
+        return new Promise(resolve => setTimeout(resolve, ms));
+    }
     /**
      * Tries to use the given barcode. Returns true if the barcode was not used
      * in the last TIME_TO_LIVE_MS milliseconds and marks the barcode as used;
@@ -278,7 +290,7 @@
                 const scan = payload.newScans[0];
                 const barcode = scan.barcode;
                 if (!tryUseBarcodeID(scan.id)) {
-                    console.log(`already used barcode "${barcode}"`);
+                    console.log(`websocket: already used barcode "${barcode}"`);
                     return;
                 }
                 console.log("BARCODE:", barcode);
@@ -397,7 +409,7 @@
                     console.log("latest barcode was scanned within tolerance; " +
                         "appending to active element");
                     if (!tryUseBarcodeID(latestBarcode.id)) {
-                        console.log("already seen barcode " +
+                        console.log("fetch: already used barcode " +
                             `"${latestBarcode.barcode}"; not appending again`);
                         return;
                     }
@@ -445,7 +457,7 @@
         USER = newValue;
         abortController?.abort();
         stopWebSocket();
-        if (USER && pageIsActive()) {
+        if (USER && document.visibilityState === "visible") {
             startWebSocket();
         }
     });
