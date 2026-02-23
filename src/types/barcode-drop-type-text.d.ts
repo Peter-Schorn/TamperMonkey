@@ -12,13 +12,13 @@ type SocketMessageTypes = "upsertScans" | "deleteScans" | "replaceAllScans";
  * More specifically, it represents a single row from the `barcodes` table,
  * with all columns included.
  */
-type ScannedBarcodeResponse = {
+type ScannedBarcodeResponse<T = string> = {
 
     /** The ID of the scanned barcode. */
     id: string;
 
     /** The date the barcode was scanned. */
-    scanned_at: string;
+    scanned_at: T;
 
     /** The scanned barcode. */
     barcode: string;
@@ -36,24 +36,24 @@ type ScannedBarcodeResponse = {
  *
  * Used in GET /scans/:user
  */
-type ScannedBarcodesResponse = ScannedBarcodeResponse[];
+type ScannedBarcodesResponse<T = string> = ScannedBarcodeResponse<T>[];
 
-type UpsertScansSocketMessage = {
+type UpsertScansSocketMessage<T = string> = {
     type: "upsertScans";
-    newScans: ScannedBarcodesResponse;
+    newScans: ScannedBarcodesResponse<T>;
 };
 
-type DeleteScansSocketMessage = {
+type DeleteScansSocketMessage<T = string> = {
     type: "deleteScans";
     ids: string[];
 };
 
-type ReplaceAllScansSocketMessage = {
+type ReplaceAllScansSocketMessage<T = string> = {
     type: "replaceAllScans";
-    scans: ScannedBarcodesResponse;
+    scans: ScannedBarcodesResponse<T>;
 };
 
-type SocketMessage =
-    | UpsertScansSocketMessage
-    | DeleteScansSocketMessage
-    | ReplaceAllScansSocketMessage;
+type SocketMessage<T = string> =
+    | UpsertScansSocketMessage<T>
+    | DeleteScansSocketMessage<T>
+    | ReplaceAllScansSocketMessage<T>;

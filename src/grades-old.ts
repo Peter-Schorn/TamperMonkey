@@ -1,5 +1,5 @@
 // ==UserScript==
-// @name         grades
+// @name         grades old
 // @namespace    http://tampermonkey.net/
 // @version      2025-08-15
 // @description  try to take over the world!
